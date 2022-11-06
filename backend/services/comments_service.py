@@ -32,9 +32,9 @@ def create_thread(
         thread = comment_threads_repository.get_by_data_point(chart_data_point)
 
         if thread is None:
-            return comment_threads_repository.add_comment_to_thread(thread, comment)
+            return comment_threads_repository.create_thread(chart_data_point, comment)
 
-        return comment_threads_repository.create_thread(chart_data_point, comment)
+        return comment_threads_repository.add_comment_to_thread(thread, comment)
 
 
 def respond_to_thread(thread_id: UUID, comment: Comment) -> CommentThreadWithComments:

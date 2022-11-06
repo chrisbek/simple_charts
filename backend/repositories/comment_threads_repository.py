@@ -84,6 +84,6 @@ def add_comment_to_thread(
 ) -> CommentThreadWithComments | None:
     with update_lock:
         thread.comments.append(comment)
-        thread.comments_count += thread.comments_count + 1
+        thread.comments_count += 1
 
     return thread
