@@ -11,16 +11,17 @@ interface ShareMenuProps {
 export const ShareMenu = ({ show }: ShareMenuProps) => {
   const link = useSharingLink();
   const [copied, setCopied] = useState(false);
-  const copyLink = () => {
-    if (!link) return;
 
-    try {
-      (navigator as any).clipbord.writeText(link);
-    } catch (error) {
-      console.error(error);
-    }
-    setCopied(true);
-  };
+  async function copyLink() {
+      if (!link) return;
+
+      try {
+          await navigator.clipboard.writeText(link);
+          setCopied(true);
+      } catch (error) {
+          console.error(error);
+      }
+  }
 
   useEffect(() => {
     setCopied(false);
