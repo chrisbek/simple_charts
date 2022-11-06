@@ -1,4 +1,3 @@
-import uuid
 import pytest
 from models.chart_data_feature import ChartDataFeature
 from models.chart_data_point import ChartDataPoint
@@ -11,6 +10,7 @@ from repositories.comment_threads_repository import (
     get,
     get_by_data_point, create_thread, threads, add_comment_to_thread
 )
+from tests.data_providers import global_provider
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -28,52 +28,27 @@ async def test_get_all_matches_the_initial_values():
         assert comment_thread.id == initial_thread.id
 
 
+@pytest.mark.parametrize("thread_id, expected", global_provider.get_provider())
 @pytest.mark.asyncio
-async def test_get_non_existing_thread():
-    assert get(uuid.uuid4()) is None
-    # self.assertIsNone()
+async def test_get_existing_thread(thread_id, expected):
+    assert get(thread_id) == expected
 
 
+@pytest.mark.parametrize("chart_data_point, expected_result", global_provider.get_by_data_point_provider())
 @pytest.mark.asyncio
-async def test_get_existing_thread():
-    for thread in initial_threads:
-        assert get(thread.id), thread
+async def test_get_by_data_point(chart_data_point, expected_result):
+    assert get_by_data_point(chart_data_point) == expected_result
 
 
+@pytest.mark.parametrize("new_chart_data_point, existing_threads", global_provider.create_thread_provider())
 @pytest.mark.asyncio
-async def test_get_by_data_point():
-    """TODO: use a provider to get all existing threads"""
-    existing_thread = initial_threads[0]
-    existing_data_point = existing_thread.chart_data_point
-    result = get_by_data_point(existing_data_point)
-
-    assert result == existing_thread
-
-
-@pytest.mark.asyncio
-async def test_get_by_data_point_non_existing_data_point():
-    """TODO: use a provider to get mocked non existing ChartDataPoint"""
-    assert get_by_data_point(
-        ChartDataPoint(
-            feature=ChartDataFeature(ChartDataFeature.HOTDOG),
-            country=Country(Country.FR)
-        )
-    ) is None
-
-
-@pytest.mark.asyncio
-async def test_create_thread():
-    chart_data_point = ChartDataPoint(
-        feature=ChartDataFeature(ChartDataFeature.HOTDOG),
-        country=Country(Country.FR)
-    )
-
+async def test_create_thread(new_chart_data_point, existing_threads):
     thread_with_comments = create_thread(
-        chart_data_point,
+        new_chart_data_point,
         'my comment'
     )
 
-    assert thread_with_comments in [t for t in threads.values()]
+    assert thread_with_comments in existing_threads
 
 
 @pytest.mark.asyncio
