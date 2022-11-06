@@ -15,8 +15,8 @@ from models.requests.create_thread_request import CreateThreadRequest
 from models.requests.respond_to_thread_request import RespondToThreadRequest
 
 
-chart_data = json.load(open("./stub_data/chart_data.json"))
-initial_comment_threads = json.load(open("./stub_data/initial_comments.json"))
+chart_data = json.load(open("stub_data/chart_data.json"))
+initial_comment_threads = json.load(open("stub_data/initial_comments.json"))
 
 with TestClient(app) as client:
 
