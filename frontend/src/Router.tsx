@@ -1,9 +1,10 @@
-import { ChartPage } from "./pages/ChartPage";
-import { SharedChartPage } from "./pages/SharedChartPage";
+import {ChartPage} from "./pages/ChartPage";
+import {UserCredentialsPage} from "./pages/UserCredentialsPage";
 
 export const Router = () => {
   const page = window.location.pathname;
 
-  if (page.startsWith("/share/chart")) return <SharedChartPage />;
-  else return <ChartPage />;
+  if (page.startsWith("/share/chart")) return <UserCredentialsPage/>;
+
+  else return <ChartPage/>;
 };

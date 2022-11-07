@@ -1,10 +1,19 @@
-import { API_URL } from "../constants/api";
-import { ChartData } from "../data/models/ChartData";
-import { handleErrors } from "./handleErrors";
+import {API_URL} from "../constants/api";
+import {ChartData} from "../data/models/ChartData";
+import {handleErrors} from "./handleErrors";
 
-export const fetchSharingToken = async (): Promise<{ token: string }> => {
+export const fetchSharingToken = async (
+    email: string,
+    expirationDate: Date | null
+): Promise<{ token: string }> => {
+
   const response = await fetch(`${API_URL}/share`, {
-    headers: { "content-type": "application/json" },
+    method: 'POST',
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify({
+      email: email,
+      expiration_date: expirationDate?.toISOString().slice(0, -1)
+    })
   });
   await handleErrors(response);
 
@@ -12,10 +21,11 @@ export const fetchSharingToken = async (): Promise<{ token: string }> => {
 };
 
 export const fetchSharedChartData = async (
-  token: string
+    token: string,
+    email: string
 ): Promise<ChartData> => {
-  const response = await fetch(`${API_URL}/chart/shared/${token}`, {
-    headers: { "content-type": "application/json" },
+  const response = await fetch(`${API_URL}/chart/shared/${token}/${email}`, {
+    headers: {"content-type": "application/json"},
   });
   await handleErrors(response);
 
