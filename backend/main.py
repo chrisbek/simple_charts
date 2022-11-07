@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from models.requests.create_thread_request import CreateThreadRequest
+from models.requests.get_share_link_request import ShareDataDto
 from models.requests.respond_to_thread_request import RespondToThreadRequest
 from repositories.comment_threads_repository import load_initial_values
 from services import data_service, share_service, comments_service
@@ -57,14 +58,14 @@ def create_thread(thread_id: str, request: RespondToThreadRequest):
     ).to_dict()
 
 
-@app.get("/share")
-def get_share_link():
-    return {"token": share_service.get_share_token()}
+@app.post("/share")
+def get_share_link(share_data_dto: ShareDataDto):
+    return {"token": share_service.get_share_token(share_data_dto.email, share_data_dto.expiration_date)}
 
 
-@app.get("/chart/shared/{token}")
-def get_shared_chart(token: str):
-    share_service.validate_token(token)
+@app.get("/chart/shared/{token}/{email}")
+def get_shared_chart(token: str, email: str):
+    share_service.validate_token(token, email)
     return data_service.get_chart_data()
 
 

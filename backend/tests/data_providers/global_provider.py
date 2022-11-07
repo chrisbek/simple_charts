@@ -2,6 +2,7 @@ from models.chart_data_feature import ChartDataFeature
 from models.chart_data_point import ChartDataPoint
 from models.country import Country
 from repositories.comment_threads_repository import threads
+from tests.test_utils import get_datetime_of_next_day, get_datetime_of_next_week, token_example
 
 
 def get_provider():
@@ -10,7 +11,7 @@ def get_provider():
     """
     for thread in threads.values():
         yield thread.id, thread
-    yield 'c10f268c-81ab-4bc3-9da6-12a23532a567', None
+    yield token_example, None
 
 
 def get_by_data_point_provider():
@@ -34,3 +35,9 @@ def create_thread_provider():
         feature=ChartDataFeature(ChartDataFeature.HOTDOG),
         country=Country(Country.FR)
     ), threads.values()
+
+
+def get_valid_email_expiration_date_pairs():
+    yield 'test@gmail.com', get_datetime_of_next_day()
+    yield 'another@gmail.com', get_datetime_of_next_day()
+    yield 'another@gmail.com', get_datetime_of_next_week()

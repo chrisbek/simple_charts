@@ -2,9 +2,7 @@ import dataclasses
 import json
 from uuid import UUID, uuid4
 import uuid
-
 from fastapi.testclient import TestClient
-
 from main import app
 from models.chart_data_feature import ChartDataFeature
 from models.chart_data_point import ChartDataPoint
@@ -13,13 +11,12 @@ from models.comment_thread import CommentThreadWithComments, CommentThread
 from models.country import Country
 from models.requests.create_thread_request import CreateThreadRequest
 from models.requests.respond_to_thread_request import RespondToThreadRequest
-
+from tests.test_utils import get_datetime_of_next_day, get_datetime_of_previous_day, email_example
 
 chart_data = json.load(open("stub_data/chart_data.json"))
 initial_comment_threads = json.load(open("stub_data/initial_comments.json"))
 
 with TestClient(app) as client:
-
     def test_get_chart_data():
         """
         Chart data is returned correctly
@@ -28,6 +25,7 @@ with TestClient(app) as client:
         assert response.status_code == 200
 
         assert response.json() == chart_data
+
 
     def test_get_initial_chart_threads():
         """
@@ -41,6 +39,7 @@ with TestClient(app) as client:
         for index, thread in enumerate(initial_comment_threads):
             assert UUID(thread["id"]) == response_threads[index].id
             assert thread["comments_count"] == response_threads[index].comments_count
+
 
     def test_respond_to_existing_thread():
         """
@@ -72,6 +71,7 @@ with TestClient(app) as client:
         assert updated_first_thread.comments[-1].user_name == new_comment.user_name
         assert updated_first_thread.comments[-1].text == new_comment.text
 
+
     def test_respond_to_existing_thread_bad_id():
         """
         When adding comment to an inexistent thread server should return an error
@@ -82,6 +82,7 @@ with TestClient(app) as client:
             json=dataclasses.asdict(RespondToThreadRequest(new_comment)),
         )
         assert response.status_code == 400
+
 
     def test_respond_to_existing_thread_bad_comment():
         """
@@ -98,6 +99,7 @@ with TestClient(app) as client:
             json=request,
         )
         assert response.status_code == 422
+
 
     def test_create_new_thread():
         """
@@ -142,6 +144,7 @@ with TestClient(app) as client:
         assert new_thread.comments[0].user_name == new_thread_request.comment.user_name
         assert new_thread.comments[0].text == new_thread_request.comment.text
 
+
     def test_create_new_thread_bad_datapoint():
         """
         When adding comment to an inexistent data point server should return an error
@@ -162,6 +165,7 @@ with TestClient(app) as client:
 
         response = client.post("/chart/comment_threads", json=request)
         assert response.status_code == 422
+
 
     def test_create_new_thread_bad_comment():
         """
@@ -184,30 +188,85 @@ with TestClient(app) as client:
         response = client.post("/chart/comment_threads", json=request)
         assert response.status_code == 422
 
-    def test_get_share_token():
+
+    def test_post_share_token():
         """
         It should return a UUIDv4 share token
         """
-        response = client.get("/share")
+        expiration_date = get_datetime_of_next_day()
 
+        response = client.post("/share", json={
+            'email': email_example,
+            'expiration_date': expiration_date.isoformat()
+        })
         tokenUUID = uuid.UUID(response.json()["token"])
 
         assert tokenUUID != None
+
 
     def test_get_shared_data():
         """
         It should return a shared chart data when correct token is passed
         """
-        response = client.get("/share")
+        expiration_date = get_datetime_of_next_day()
 
-        response = client.get(f"/chart/shared/{response.json()['token']}")
+        response = client.post("/share", json={
+            'email': email_example,
+            'expiration_date': expiration_date.isoformat()
+        })
+        token = response.json()['token']
+
+        response = client.get(f"/chart/shared/{token}/{email_example}")
         assert response.status_code == 200
 
         assert response.json() == chart_data
 
-    def test_get_shared_data_failure():
+
+    def test_get_shared_data_invalid_link():
         """
         It should return 404 error for chart data when incorrect token is passed
         """
         response = client.get(f"/chart/shared/bad_token")
         assert response.status_code == 404
+
+
+    def test_get_shared_data_invalid_token():
+        """
+        It should return 404 error for chart data when incorrect token is passed
+        """
+        response = client.get(f"/chart/shared/bad_token/any")
+        assert response.status_code == 404
+
+
+    def test_get_shared_data_different_email():
+        """
+        It should return 401 error for chart data when token is valid but email is not matching the token
+        """
+        expiration_date = get_datetime_of_next_day()
+
+        response = client.post("/share", json={
+            'email': email_example,
+            'expiration_date': expiration_date.isoformat()
+        })
+        token = response.json()['token']
+
+        response = client.get(f"/chart/shared/{token}/invalid@email")
+        assert response.status_code == 401
+        assert response.json() == {'detail': 'Invalid Email'}
+
+
+    def test_get_shared_data_expired_link():
+        """
+        It should return 401 error for chart data when token is valid but email is incorrect
+        """
+        expiration_date = get_datetime_of_previous_day()
+
+        response = client.post("/share", json={
+            'email': email_example,
+            'expiration_date': expiration_date.isoformat()
+        })
+        token = response.json()['token']
+
+        response = client.get(f"/chart/shared/{token}/{email_example}")
+        assert response.status_code == 401
+        assert response.json() == {'detail': 'Link Expired'}
